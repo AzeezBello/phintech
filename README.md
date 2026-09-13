@@ -37,6 +37,27 @@ npm run build  # Create a production build
 npm run start  # Serve the production build
 ```
 
+## Deploy to Vercel
+
+Import the GitHub repository into Vercel. Vercel detects the Next.js app automatically, so the default build settings are sufficient:
+
+- Framework preset: `Next.js`
+- Build command: `npm run build`
+- Install command: `npm install`
+- Output directory: leave the default
+
+Add these environment variables in the Vercel project settings for Production, Preview, and Development as needed:
+
+```env
+RESEND_API_KEY=your_resend_api_key
+CONTACT_TO_EMAIL=philtech91@gmail.com
+CONTACT_FROM_EMAIL=Phintech Creatives <onboarding@resend.dev>
+```
+
+For production email delivery, use a `CONTACT_FROM_EMAIL` address on a domain verified in Resend. The local `.env.local` file is ignored and must not be committed.
+
+After deployment, update `https://phintechcreatives.com` in `app/layout.tsx`, `app/robots.ts`, and `app/sitemap.ts` if the live domain is different.
+
 ## Site structure
 
 - `/` - Studio introduction and featured work

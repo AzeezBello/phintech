@@ -1,0 +1,1 @@
+import type{MetadataRoute}from'next';export default function sitemap():MetadataRoute.Sitemap{return['','/about','/services','/work','/faq','/contact','/terms','/privacy'].map(path=>({url:'https://phintechcreatives.com'+path,lastModified:new Date()}))}

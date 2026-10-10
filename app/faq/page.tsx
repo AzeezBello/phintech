@@ -5,6 +5,7 @@ import {Badge} from '@/components/ui/badge';
 
 export const metadata={title:'FAQ',description:'Answers to common questions about working with Phintech Creatives.'};
 const questions=[
+  ['What services do you offer?','We sell books and stationery, provide general printing and photocopying, laminating and binding, large-format printing and passport photographs. We also assist with online registration for JAMB, WAEC, Post-UTME, visa and NYSC applications, alongside our branding, design and digital services.'],
   ['What kind of projects does Phintech take on?','We work with businesses, founders and teams that need a sharper brand, a better digital experience or creative support for an important launch. That can mean a focused identity project, a website, campaign design or a combination of services.'],
   ['Do you work with clients outside Lagos?','Yes. We are based in Surulere, Lagos and work with clients across Nigeria and beyond. Most of our process is designed to work smoothly through video calls, shared documents and regular progress updates.'],
   ['How long does a project usually take?','A focused identity or campaign can take a few weeks. A website or larger digital product usually needs more time for strategy, design, development and testing. After an initial conversation, we will give you a realistic timeline for your specific scope.'],

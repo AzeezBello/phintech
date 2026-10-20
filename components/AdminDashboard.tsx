@@ -12,6 +12,7 @@ import {
   Layers,
   LogOut,
   Mail,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -33,6 +34,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/select';
@@ -125,7 +133,7 @@ export function AdminDashboard({
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null);
   const [notesDraft, setNotesDraft] = useState<string>('');
 
-  // Portfolio filter & form state
+  // Portfolio filter & create form state
   const [portfolioCategoryFilter, setPortfolioCategoryFilter] =
     useState<string>('all');
   const [portfolioSearch, setPortfolioSearch] = useState<string>('');
@@ -135,6 +143,16 @@ export function AdminDashboard({
   const [newPortfolioUrl, setNewPortfolioUrl] = useState('');
   const [newPortfolioFeatured, setNewPortfolioFeatured] = useState(false);
   const [creatingPortfolio, setCreatingPortfolio] = useState(false);
+
+  // Portfolio edit modal state
+  const [editingPortfolioItem, setEditingPortfolioItem] =
+    useState<PortfolioRecord | null>(null);
+  const [editPortfolioTitle, setEditPortfolioTitle] = useState('');
+  const [editPortfolioCategory, setEditPortfolioCategory] =
+    useState<PortfolioRecord['category']>('branding');
+  const [editPortfolioUrl, setEditPortfolioUrl] = useState('');
+  const [editPortfolioFeatured, setEditPortfolioFeatured] = useState(false);
+  const [savingPortfolioEdit, setSavingPortfolioEdit] = useState(false);
 
   // Service form state
   const [newServiceTitle, setNewServiceTitle] = useState('');
@@ -246,6 +264,10 @@ export function AdminDashboard({
   async function handleCreatePortfolio(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (creatingPortfolio) return;
+    if (!newPortfolioUrl.trim()) {
+      notify('Please upload an image or enter an image URL first.');
+      return;
+    }
     setCreatingPortfolio(true);
     try {
       const res = await fetch('/api/admin/portfolio', {
@@ -270,6 +292,49 @@ export function AdminDashboard({
       }
     } finally {
       setCreatingPortfolio(false);
+    }
+  }
+
+  function openEditPortfolioModal(item: PortfolioRecord) {
+    setEditingPortfolioItem(item);
+    setEditPortfolioTitle(item.title);
+    setEditPortfolioCategory(item.category);
+    setEditPortfolioUrl(item.image_url);
+    setEditPortfolioFeatured(item.featured);
+  }
+
+  async function handleSavePortfolioEdit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editingPortfolioItem || savingPortfolioEdit) return;
+    if (!editPortfolioUrl.trim()) {
+      notify('Please upload or provide an image for this project.');
+      return;
+    }
+    setSavingPortfolioEdit(true);
+    try {
+      const res = await fetch('/api/admin/portfolio', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingPortfolioItem.id,
+          title: editPortfolioTitle,
+          category: editPortfolioCategory,
+          image_url: editPortfolioUrl,
+          featured: editPortfolioFeatured,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.item) {
+        setPortfolio((prev) =>
+          prev.map((p) => (p.id === editingPortfolioItem.id ? data.item : p))
+        );
+        setEditingPortfolioItem(null);
+        notify(`Updated "${data.item.title}".`);
+      } else {
+        notify(data.error || 'Failed to update portfolio project.');
+      }
+    } finally {
+      setSavingPortfolioEdit(false);
     }
   }
 
@@ -776,7 +841,7 @@ export function AdminDashboard({
                   onClick={() => setActiveTab('portfolio')}
                   className="action-button flex items-center justify-between rounded-xl border border-[#2a2c32] bg-[#141519] p-3.5 text-left text-sm font-bold text-[#fafafa] hover:border-[#ffd400]"
                 >
-                  <span>Add or feature portfolio work</span>
+                  <span>Upload or feature portfolio work</span>
                   <Plus size={16} className="text-[#ffd400]" />
                 </button>
                 <button
@@ -979,83 +1044,96 @@ export function AdminDashboard({
           </Card>
         </TabsContent>
 
-        {/* TAB 3: PORTFOLIO */}
+        {/* TAB 3: PORTFOLIO (with Image Uploader + Edit Modal) */}
         <TabsContent value="portfolio" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Add Portfolio Project</CardTitle>
+              <CardTitle>Upload Portfolio Project</CardTitle>
               <CardDescription>
-                Add a new work item to the Neon database so it displays in the studio archive.
+                Drag and drop an image file (or paste from clipboard) to upload directly to Neon PostgreSQL and publish to the live Work archive.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form
                 onSubmit={handleCreatePortfolio}
-                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                className="grid gap-6 lg:grid-cols-[1.15fr_.85fr]"
               >
-                <div className="space-y-2">
-                  <Label htmlFor="portfolio-title">Project Title</Label>
-                  <Input
-                    id="portfolio-title"
-                    name="title"
-                    required
-                    placeholder="e.g. Lagos Tech Fest Identity"
-                    value={newPortfolioTitle}
-                    onChange={(e) => setNewPortfolioTitle(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="portfolio-category">Category</Label>
-                  <NativeSelect
-                    id="portfolio-category"
-                    name="category"
-                    value={newPortfolioCategory}
-                    onChange={(e) =>
-                      setNewPortfolioCategory(
-                        e.target.value as PortfolioRecord['category']
-                      )
+                <ImageUploader
+                  id="create-portfolio-image"
+                  value={newPortfolioUrl}
+                  onChange={(url, meta) => {
+                    setNewPortfolioUrl(url);
+                    if (meta?.filename && !newPortfolioTitle.trim()) {
+                      const suggested = meta.filename
+                        .replace(/\.[^.]+$/, '')
+                        .replace(/[-_]+/g, ' ')
+                        .trim();
+                      if (suggested) setNewPortfolioTitle(suggested);
                     }
-                  >
-                    <option value="branding">Branding</option>
-                    <option value="flyers">Flyers</option>
-                    <option value="letter-head">Letter Heads</option>
-                    <option value="logos">Logos</option>
-                  </NativeSelect>
-                </div>
+                  }}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="portfolio-url">Image URL / Path</Label>
-                  <Input
-                    id="portfolio-url"
-                    name="image_url"
-                    required
-                    spellCheck={false}
-                    autoCorrect="off"
-                    autoCapitalize="none"
-                    placeholder="/portfolio/branding/801.jpg"
-                    value={newPortfolioUrl}
-                    onChange={(e) => setNewPortfolioUrl(e.target.value)}
-                  />
-                </div>
+                <div className="flex flex-col justify-between gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="portfolio-title">Project Title</Label>
+                      <Input
+                        id="portfolio-title"
+                        name="title"
+                        required
+                        placeholder="e.g. Lagos Tech Fest Identity"
+                        value={newPortfolioTitle}
+                        onChange={(e) => setNewPortfolioTitle(e.target.value)}
+                      />
+                    </div>
 
-                <div className="flex flex-col justify-end gap-3">
-                  <div className="flex items-center justify-between rounded-xl border border-[#2a2c32] bg-[#0d0e11] px-3.5 py-2">
-                    <Label
-                      htmlFor="portfolio-featured-switch"
-                      className="cursor-pointer text-xs text-[#fafafa]"
-                    >
-                      Feature on top
-                    </Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="portfolio-category">Category</Label>
+                      <NativeSelect
+                        id="portfolio-category"
+                        name="category"
+                        value={newPortfolioCategory}
+                        onChange={(e) =>
+                          setNewPortfolioCategory(
+                            e.target.value as PortfolioRecord['category']
+                          )
+                        }
+                      >
+                        <option value="branding">Branding</option>
+                        <option value="flyers">Flyers</option>
+                        <option value="letter-head">Letter Heads</option>
+                        <option value="logos">Logos</option>
+                      </NativeSelect>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border border-[#2a2c32] bg-[#0d0e11] px-4 py-3">
+                    <div>
+                      <Label
+                        htmlFor="portfolio-featured-switch"
+                        className="cursor-pointer text-xs text-[#fafafa]"
+                      >
+                        Feature on top of archive
+                      </Label>
+                      <p className="text-[11px] text-[#a1a1aa]">
+                        Highlights this work with a Featured badge
+                      </p>
+                    </div>
                     <Switch
                       id="portfolio-featured-switch"
                       checked={newPortfolioFeatured}
                       onCheckedChange={setNewPortfolioFeatured}
                     />
                   </div>
-                  <Button type="submit" disabled={creatingPortfolio}>
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={creatingPortfolio || !newPortfolioUrl}
+                    className="w-full justify-center"
+                  >
                     <Plus size={16} />{' '}
-                    {creatingPortfolio ? 'Adding...' : 'Add Project'}
+                    {creatingPortfolio ? 'Publishing Project...' : 'Publish to Portfolio'}
                   </Button>
                 </div>
               </form>
@@ -1098,24 +1176,43 @@ export function AdminDashboard({
 
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {filteredPortfolio.map((item) => (
-              <Card key={item.id} className="overflow-hidden">
-                <div className="aspect-[4/3] bg-[#141519]">
+              <Card key={item.id} className="group overflow-hidden">
+                <div className="relative aspect-[4/3] bg-[#141519]">
                   <img
                     src={item.image_url}
                     alt={item.title}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                     loading="lazy"
                   />
+                  {item.featured && (
+                    <div className="absolute left-3 top-3">
+                      <Badge className="bg-black/75 px-2.5 py-0.5 text-[10px] backdrop-blur-md">
+                        <Sparkles size={10} /> Featured
+                      </Badge>
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-bold text-[#fafafa]">{item.title}</h3>
+                    <div className="min-w-0">
+                      <h3 className="truncate font-bold text-[#fafafa]">
+                        {item.title}
+                      </h3>
                       <p className="text-xs text-[#a1a1aa]">
                         {CATEGORY_LABELS[item.category] || item.category}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => openEditPortfolioModal(item)}
+                        aria-label={`Edit or replace image for ${item.title}`}
+                        className="h-8 w-8"
+                      >
+                        <Pencil size={13} />
+                      </Button>
                       <Button
                         type="button"
                         variant={item.featured ? 'default' : 'outline'}
@@ -1144,6 +1241,92 @@ export function AdminDashboard({
               </Card>
             ))}
           </div>
+
+          {/* Edit / Replace Image Modal */}
+          <Dialog
+            open={Boolean(editingPortfolioItem)}
+            onOpenChange={(open) => {
+              if (!open) setEditingPortfolioItem(null);
+            }}
+          >
+            {editingPortfolioItem && (
+              <form onSubmit={handleSavePortfolioEdit} className="space-y-5">
+                <DialogHeader>
+                  <DialogTitle>Edit Portfolio Project</DialogTitle>
+                  <DialogDescription>
+                    Upload a replacement image or update metadata for &ldquo;
+                    {editingPortfolioItem.title}&rdquo;.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <ImageUploader
+                  id="edit-portfolio-image"
+                  value={editPortfolioUrl}
+                  onChange={(url) => setEditPortfolioUrl(url)}
+                />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-portfolio-title">Project Title</Label>
+                    <Input
+                      id="edit-portfolio-title"
+                      required
+                      value={editPortfolioTitle}
+                      onChange={(e) => setEditPortfolioTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-portfolio-category">Category</Label>
+                    <NativeSelect
+                      id="edit-portfolio-category"
+                      value={editPortfolioCategory}
+                      onChange={(e) =>
+                        setEditPortfolioCategory(
+                          e.target.value as PortfolioRecord['category']
+                        )
+                      }
+                    >
+                      <option value="branding">Branding</option>
+                      <option value="flyers">Flyers</option>
+                      <option value="letter-head">Letter Heads</option>
+                      <option value="logos">Logos</option>
+                    </NativeSelect>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl border border-[#2a2c32] bg-[#0d0e11] px-4 py-3">
+                  <Label
+                    htmlFor="edit-portfolio-featured"
+                    className="cursor-pointer text-xs text-[#fafafa]"
+                  >
+                    Feature on top of archive
+                  </Label>
+                  <Switch
+                    id="edit-portfolio-featured"
+                    checked={editPortfolioFeatured}
+                    onCheckedChange={setEditPortfolioFeatured}
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingPortfolioItem(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={savingPortfolioEdit || !editPortfolioUrl}
+                  >
+                    {savingPortfolioEdit ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </Dialog>
         </TabsContent>
 
         {/* TAB 4: SERVICES */}

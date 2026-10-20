@@ -184,6 +184,17 @@ export async function ensureSchema() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS uploaded_media (
+      id SERIAL PRIMARY KEY,
+      filename TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      byte_size INTEGER NOT NULL,
+      data_base64 TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+
   // Ensure default superadmin exists
   const existingSuperadmin = await sql`
     SELECT id FROM admins WHERE LOWER(email) = LOWER(${DEFAULT_SUPERADMIN_EMAIL}) LIMIT 1

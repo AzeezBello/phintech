@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, Expand, Search, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,10 +31,22 @@ const CATEGORIES = [
   { value: 'logos', label: 'Logos' },
 ] as const;
 
-export function WorkGallery({ items }: { items: WorkItem[] }) {
+export function WorkGallery({ items: initialItems }: { items: WorkItem[] }) {
+  const [items, setItems] = useState<WorkItem[]>(initialItems);
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState<string>('');
   const [selected, setSelected] = useState<WorkItem | null>(null);
+
+  useEffect(() => {
+    fetch('/api/portfolio')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items);
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   const filtered = useMemo(() => {
     return items.filter((item) => {

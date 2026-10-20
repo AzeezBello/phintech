@@ -62,7 +62,7 @@ export const TabsList = React.forwardRef<
     ref={ref}
     role="tablist"
     className={cn(
-      'inline-flex flex-wrap items-center gap-1.5 rounded-2xl border border-[#26272b] bg-[#101114] p-1.5 text-[#a1a1aa] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
+      'pill-row-balance inline-flex gap-1.5 rounded-2xl border border-[#232429] bg-[#101114] p-1.5 text-[#a1a1aa] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]',
       className
     )}
     {...props}

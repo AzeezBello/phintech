@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, Expand, Search, Sparkles } from 'lucide-react';
+import { ArrowUpRight, Expand, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import {
   Dialog,
   DialogDescription,
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 export type WorkItem = {
   id: string;
@@ -24,10 +25,10 @@ export type WorkItem = {
 };
 
 const CATEGORIES = [
-  { value: 'all', label: 'All Work' },
+  { value: 'all', label: 'All Specimens' },
   { value: 'branding', label: 'Branding' },
   { value: 'flyers', label: 'Flyers' },
-  { value: 'letter-head', label: 'Letter Heads' },
+  { value: 'letter-head', label: 'Letterheads' },
   { value: 'logos', label: 'Logos' },
 ] as const;
 
@@ -35,7 +36,9 @@ export function WorkGallery({ items: initialItems }: { items: WorkItem[] }) {
   const [items, setItems] = useState<WorkItem[]>(initialItems);
   const [category, setCategory] = useState<string>('all');
   const [query, setQuery] = useState<string>('');
-  const [selected, setSelected] = useState<WorkItem | null>(null);
+  const [selected, setSelected] = useState<{ item: WorkItem; index: number } | null>(
+    null
+  );
 
   useEffect(() => {
     fetch('/api/portfolio')
@@ -60,9 +63,12 @@ export function WorkGallery({ items: initialItems }: { items: WorkItem[] }) {
     });
   }, [items, category, query]);
 
+  const isEditorialRhythm = category === 'all' && !query.trim();
+
   return (
     <div className="space-y-10">
-      <div className="flex flex-col justify-between gap-4 border-b border-[#26272b] pb-6 lg:flex-row lg:items-center">
+      {/* STUDIO FILTER CONTROL BAR */}
+      <div className="flex flex-col justify-between gap-4 border-b border-[#232429] pb-6 lg:flex-row lg:items-center">
         <Tabs value={category} onValueChange={setCategory} className="w-auto">
           <TabsList>
             {CATEGORIES.map((c) => {
@@ -73,36 +79,46 @@ export function WorkGallery({ items: initialItems }: { items: WorkItem[] }) {
               return (
                 <TabsTrigger key={c.value} value={c.value}>
                   <span>{c.label}</span>
-                  <span className="tabular-nums opacity-70">({count})</span>
+                  <span className="font-mono tabular-nums opacity-70">
+                    [{count}]
+                  </span>
                 </TabsTrigger>
               );
             })}
           </TabsList>
         </Tabs>
 
-        <div className="relative w-full lg:w-72">
-          <Search
-            size={15}
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#a1a1aa]"
-          />
-          <Input
-            type="search"
-            aria-label="Filter projects by name"
-            placeholder="Filter archive..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="none"
-            className="pl-9"
-          />
+        <div className="flex items-center gap-4">
+          <span className="hidden font-mono text-xs uppercase tracking-wider text-[#a1a1aa] sm:inline">
+            Showing {filtered.length} of {items.length}
+          </span>
+          <div className="relative w-full lg:w-72">
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#a1a1aa]"
+            />
+            <Input
+              type="search"
+              aria-label="Filter projects by name"
+              placeholder="Search archive index..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              className="pl-9 font-mono text-xs"
+            />
+          </div>
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <Card className="p-12 text-center">
-          <p className="text-sm text-[#a1a1aa]">
-            No projects found matching &ldquo;{query}&rdquo;.
+          <p className="font-mono text-xs uppercase tracking-wider text-[#ffd400]">
+            0 MATCHES IN ARCHIVE
+          </p>
+          <p className="mx-auto mt-2 text-sm text-[#a1a1aa]">
+            No studio specimens found matching &ldquo;{query}&rdquo;.
           </p>
           <Button
             type="button"
@@ -112,53 +128,66 @@ export function WorkGallery({ items: initialItems }: { items: WorkItem[] }) {
               setCategory('all');
               setQuery('');
             }}
-            className="mt-4"
+            className="mt-5"
           >
-            Reset filters
+            Reset archive filters
           </Button>
         </Card>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((item) => (
-            <Card
-              key={item.id}
-              interactive
-              className="group cursor-pointer overflow-hidden"
-              onClick={() => setSelected(item)}
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-[#141519]">
-                <img
-                  src={item.imageUrl}
-                  alt={`${item.categoryLabel} project: ${item.title}`}
-                  className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
-                  loading="lazy"
-                />
-                <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/60 text-white opacity-0 backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100">
-                  <Expand size={14} />
-                </div>
-                {item.featured && (
-                  <div className="absolute left-3 top-3">
-                    <Badge className="bg-black/75 backdrop-blur-md">
-                      <Sparkles size={11} /> Featured
-                    </Badge>
-                  </div>
+          {filtered.map((item, idx) => {
+            const isWidePlate = isEditorialRhythm && idx % 7 === 0;
+            const plateCode = String(idx + 1).padStart(3, '0');
+            return (
+              <Card
+                key={item.id}
+                interactive
+                className={cn(
+                  'group flex cursor-pointer flex-col justify-between overflow-clip p-3.5',
+                  isWidePlate && 'sm:col-span-2'
                 )}
-              </div>
-              <CardContent className="flex items-center justify-between gap-3 p-4">
+                onClick={() => setSelected({ item, index: idx + 1 })}
+              >
                 <div>
-                  <h3 className="font-bold tracking-tight text-[#fafafa]">
+                  <div className="mb-2.5 flex items-center justify-between font-mono text-[11px] text-[#a1a1aa]">
+                    <span>
+                      SPECIMEN // #{plateCode}
+                      {item.featured ? ' • FEATURED' : ''}
+                    </span>
+                    <span className="uppercase text-[#ffd400]">
+                      {item.categoryLabel}
+                    </span>
+                  </div>
+
+                  <div
+                    className={cn(
+                      'relative overflow-clip rounded-xl border border-white/10 bg-[#0b0c0f]',
+                      isWidePlate ? 'aspect-[16/10]' : 'aspect-[4/3]'
+                    )}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={`${item.categoryLabel} project: ${item.title}`}
+                      className="h-full w-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.035]"
+                      loading="lazy"
+                    />
+                    <div className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white opacity-0 backdrop-blur-md transition-opacity duration-150 group-hover:opacity-100">
+                      <Expand size={14} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3.5 flex items-center justify-between gap-3 px-1 pt-1">
+                  <h3 className="font-display text-base font-bold tracking-tight text-[#f5f4f0]">
                     {item.title}
                   </h3>
-                  <p className="mt-0.5 text-xs text-[#a1a1aa]">
-                    {item.categoryLabel}
-                  </p>
+                  <span className="shrink-0 font-mono text-[11px] text-[#a1a1aa] transition-colors group-hover:text-[#ffd400]">
+                    Inspect →
+                  </span>
                 </div>
-                <Badge variant="secondary" className="shrink-0 text-[10px]">
-                  {item.categoryLabel}
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -171,38 +200,43 @@ export function WorkGallery({ items: initialItems }: { items: WorkItem[] }) {
         {selected && (
           <div className="space-y-5">
             <DialogHeader>
-              <div className="mb-1">
-                <Badge variant="default">{selected.categoryLabel}</Badge>
+              <div className="mb-2 flex flex-wrap items-center gap-2 font-mono text-xs">
+                <Badge variant="default">{selected.item.categoryLabel}</Badge>
+                <span className="text-[#a1a1aa]">
+                  ARCHIVE PLATE #{String(selected.index).padStart(3, '0')}
+                </span>
               </div>
-              <DialogTitle className="text-2xl">{selected.title}</DialogTitle>
-              <DialogDescription>
-                Phintech Creatives Studio Archive • Lagos, Nigeria
+              <DialogTitle className="font-display text-2xl">
+                {selected.item.title}
+              </DialogTitle>
+              <DialogDescription className="font-mono text-xs uppercase tracking-wider">
+                Phintech Creatives Studio Archive • Surulere, Lagos
               </DialogDescription>
             </DialogHeader>
 
-            <div className="overflow-hidden rounded-xl border border-[#26272b] bg-[#0a0b0e]">
+            <div className="overflow-clip rounded-xl border border-[#232429] bg-[#09090b] p-2">
               <img
-                src={selected.imageUrl}
-                alt={selected.title}
-                className="max-h-[65vh] w-full object-contain"
+                src={selected.item.imageUrl}
+                alt={selected.item.title}
+                className="max-h-[62dvh] w-full rounded-lg object-contain"
               />
             </div>
 
-            <div className="flex items-center justify-between gap-4 pt-1">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#232429] pt-4">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => setSelected(null)}
               >
-                Close preview
+                Close proof sheet
               </Button>
               <Button
                 asChild
-                href={`/contact?service=${encodeURIComponent(selected.categoryLabel)}`}
+                href={`/contact?service=${encodeURIComponent(selected.item.categoryLabel)}`}
                 size="sm"
               >
-                Request similar work <ArrowUpRight size={14} />
+                Commission similar work <ArrowUpRight size={14} />
               </Button>
             </div>
           </div>

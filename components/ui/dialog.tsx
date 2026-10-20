@@ -26,13 +26,13 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain p-4 sm:p-6"
     >
       <div
         onClick={() => onOpenChange(false)}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity"
       />
-      <div className="sonner-toast relative z-10 w-full max-w-2xl overflow-hidden rounded-2xl border border-[#2e3036] bg-[#101114] p-6 text-[#fafafa] shadow-2xl">
+      <div className="sonner-toast relative z-10 max-h-[90dvh] w-full max-w-3xl overflow-y-auto overscroll-contain rounded-2xl border border-[#2e3036] bg-[#101114] p-6 text-[#f5f4f0] shadow-2xl">
         <button
           type="button"
           onClick={() => onOpenChange(false)}

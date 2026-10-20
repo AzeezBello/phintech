@@ -1,7 +1,5 @@
 import { ArrowUpRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata = {
   title: 'Terms and Conditions',
@@ -46,35 +44,47 @@ const sections = [
 
 export default function Page() {
   return (
-    <main className="container py-24 md:py-32">
-      <Badge>Legal</Badge>
-      <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-[-0.06em] md:text-8xl">
-        Terms and conditions.
+    <main className="container py-20 md:py-28">
+      <div className="inline-flex items-center gap-3 border-l-2 border-[#ffd400] pl-3.5 font-mono text-xs uppercase tracking-[0.18em] text-[#a1a1aa]">
+        <span className="text-[#ffd400]">LEGAL // 01</span>
+        <span>TERMS OF ENGAGEMENT</span>
+      </div>
+      <h1 className="display-page mt-6 max-w-4xl font-bold text-[#f5f4f0]">
+        Terms and{' '}
+        <span className="font-editorial italic font-normal text-[#ffd400]">
+          conditions.
+        </span>
       </h1>
-      <p className="mt-8 max-w-2xl text-lg leading-8 text-[#a1a1aa]">
-        The basic terms for using the Phintech Creatives website and starting a project
-        with us.
+      <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#a1a1aa]">
+        The working terms for using the Phintech Creatives website and commissioning
+        a project with our studio.
       </p>
-      <p className="mt-4 text-xs font-bold uppercase tracking-wider text-[#a1a1aa]">
-        Last updated: September 13, 2026
+      <p className="mt-4 font-mono text-xs uppercase tracking-wider text-[#71717a]">
+        LAST UPDATED // SEPTEMBER 13, 2026
       </p>
 
-      <div className="mt-14 grid max-w-4xl gap-4">
-        {sections.map(([title, copy]) => (
-          <Card key={title}>
-            <CardHeader>
-              <CardTitle className="text-xl">{title}</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 text-sm leading-7 text-[#a1a1aa]">
-              {copy}
-            </CardContent>
-          </Card>
+      <div className="mt-14 max-w-4xl divide-y divide-[#232429] rounded-2xl border border-[#232429] bg-[#101114]">
+        {sections.map(([title, copy], idx) => (
+          <div
+            key={title}
+            className="grid gap-4 p-6 sm:p-8 md:grid-cols-[0.32fr_0.68fr]"
+          >
+            <div>
+              <span className="font-mono text-xs font-bold text-[#ffd400]">
+                CLAUSE // {String(idx + 1).padStart(2, '0')}
+              </span>
+              <h2 className="mt-1 font-display text-xl font-bold text-[#f5f4f0]">
+                {title}
+              </h2>
+            </div>
+            <p className="text-sm leading-relaxed text-[#a1a1aa]">{copy}</p>
+          </div>
         ))}
       </div>
 
       <div className="mt-10">
         <Button asChild href="mailto:philtech91@gmail.com" variant="outline">
-          Ask a question <ArrowUpRight size={16} />
+          Ask a legal question <ArrowUpRight size={16} />
         </Button>
       </div>
     </main>
